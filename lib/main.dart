@@ -17,6 +17,7 @@ class LetsKonnectApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: ApiClient.navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'StallConnect',
       theme: ThemeData(

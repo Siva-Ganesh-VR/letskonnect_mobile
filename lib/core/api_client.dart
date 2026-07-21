@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../screens/login_screen.dart';
 
 class ApiResult {
   final bool success;
@@ -25,6 +27,7 @@ class ApiClient {
   static const String prodBaseUrl = 'https://stallconnect.com';
   static String get baseUrl => kDebugMode ? devBaseUrl : prodBaseUrl;
 
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
   static final _storage = const FlutterSecureStorage();
   static late Dio dio;
 
@@ -77,6 +80,16 @@ class ApiClient {
       }
 
       ApiResult result;
+      if (response.statusCode == 401) {
+        await deleteToken();
+        navigatorKey.currentState?.pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
+        return ApiResult(
+            success: false, error: 'Your session has expired. Please log in again.');
+      }
+
       if (response.data is Map<String, dynamic>) {
         result = ApiResult.fromResponse(response.data);
       } else {
@@ -107,6 +120,16 @@ class ApiClient {
       }
 
       ApiResult result;
+      if (e.response?.statusCode == 401) {
+        await deleteToken();
+        navigatorKey.currentState?.pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
+        return ApiResult(
+            success: false, error: 'Your session has expired. Please log in again.');
+      }
+
       if (e.response?.data is Map<String, dynamic>) {
         result = ApiResult.fromResponse(e.response!.data);
       } else if (e.type == DioExceptionType.connectionTimeout ||
