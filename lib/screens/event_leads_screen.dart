@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
+import '../core/app_helpers.dart';
 import '../core/api_client.dart';
 import '../core/refresh_notifier.dart';
 import '../widgets/lead_card.dart';
-import 'home_screen.dart';
 import 'lead_detail_screen.dart';
 import 'manual_add_visitor_screen.dart';
 
@@ -106,29 +106,12 @@ class _EventLeadsScreenState extends State<EventLeadsScreen> {
     });
   }
 
-  String _getLeadTag(Map<String, dynamic> lead) {
-    final status = lead['status'] ?? 'new';
-    if (status == 'new' || status == '') {
-      return lead['temperature'] ?? 'warm';
-    }
-    return status;
-  }
+  String _getLeadTag(Map<String, dynamic> lead) => AppHelpers.getLeadTag(lead);
 
-  String _statusLabel(Map<String, dynamic> lead) {
-    final tag = _getLeadTag(lead);
-    if (['hot', 'warm', 'cold'].contains(tag)) {
-      return tag[0].toUpperCase() + tag.substring(1);
-    }
-    return AppColors.statusLabel(tag);
-  }
+  String _statusLabel(Map<String, dynamic> lead) =>
+      AppHelpers.statusLabelFromLead(lead);
 
-  String _toTitleCase(String text) {
-    if (text.isEmpty) return text;
-    return text.toLowerCase().split(' ').map((word) {
-      if (word.isEmpty) return word;
-      return word[0].toUpperCase() + word.substring(1);
-    }).join(' ');
-  }
+  String _toTitleCase(String text) => AppHelpers.toTitleCase(text);
 
   void _showEventsDialog(String visitorName) {
     showDialog(

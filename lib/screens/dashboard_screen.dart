@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
+import '../core/app_helpers.dart';
 import '../core/api_client.dart';
 import '../core/refresh_notifier.dart';
 import 'event_leads_screen.dart';
-import 'home_screen.dart';
 import 'lead_detail_screen.dart';
 import 'scanner_screen.dart';
 import 'manual_add_visitor_screen.dart';
@@ -111,35 +111,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return '🌙';
   }
 
-  String _timeAgo(String? iso) {
-    if (iso == null) return '';
-    final dt = DateTime.tryParse(iso);
-    if (dt == null) return '';
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
-    if (diff.inHours < 24) return '${diff.inHours} hr ago';
-    return '${diff.inDays}d ago';
-  }
+  String _timeAgo(String? iso) => AppHelpers.timeAgo(iso);
 
-  Color _avatarColor(String name) {
-    const colors = [
-      Color(0xFF14B8A6),
-      Color(0xFF8B5CF6),
-      Color(0xFFF59E0B),
-      Color(0xFFEF4444),
-      Color(0xFF3B82F6),
-    ];
-    return colors[name.hashCode.abs() % colors.length];
-  }
+  Color _avatarColor(String name) => AppHelpers.avatarColor(name);
 
-  String _toTitleCase(String text) {
-    if (text.isEmpty) return text;
-    return text.toLowerCase().split(' ').map((word) {
-      if (word.isEmpty) return word;
-      return word[0].toUpperCase() + word.substring(1);
-    }).join(' ');
-  }
+  String _toTitleCase(String text) => AppHelpers.toTitleCase(text);
 
   void _openAllLeads() {
     if (_event == null) return;

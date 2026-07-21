@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
+import '../core/app_helpers.dart';
 import '../core/api_client.dart';
 import 'event_leads_screen.dart';
 
@@ -134,20 +135,8 @@ class _EventsScreenState extends State<EventsScreen> {
     );
   }
 
-  String _formatDateRange(String? start, String? end) {
-    if (start == null) return 'N/A';
-    final startDate = DateTime.tryParse(start);
-    if (startDate == null) return 'N/A';
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    String res = '${startDate.day} ${months[startDate.month - 1]} ${startDate.year}';
-    if (end != null && end != start) {
-      final endDate = DateTime.tryParse(end);
-      if (endDate != null) {
-        res += ' - ${endDate.day} ${months[endDate.month - 1]} ${endDate.year}';
-      }
-    }
-    return res;
-  }
+  String _formatDateRange(String? start, String? end) =>
+      AppHelpers.formatDateRange(start, end);
 
   Widget _buildStatusBadge(String status) {
     Color color;
@@ -189,25 +178,9 @@ class _EventsScreenState extends State<EventsScreen> {
     );
   }
 
-  String _initials(String name) {
-    if (name.isEmpty) return '?';
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.length == 1) return parts[0][0].toUpperCase();
-    // For multiple words, take first letters of first two words
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
+  String _initials(String name) => AppHelpers.initials(name);
 
-  Color _avatarColor(String name) {
-    final colors = [
-      const Color(0xFF14B8A6), // primary
-      const Color(0xFF0F766E), // dark teal
-      const Color(0xFFF59E0B), // amber
-      const Color(0xFF3B82F6), // blue
-      const Color(0xFF8B5CF6), // violet
-      const Color(0xFFEC4899), // pink
-    ];
-    return colors[name.hashCode.abs() % colors.length];
-  }
+  Color _avatarColor(String name) => AppHelpers.avatarColor(name);
 
   @override
   Widget build(BuildContext context) {
@@ -476,15 +449,6 @@ class _EventsScreenState extends State<EventsScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildPlaceholderImage() {
-    return Container(
-      width: 100,
-      height: 116,
-      color: const Color(0xFFF1F5F9),
-      child: const Icon(Icons.image_rounded, color: Color(0xFFCBD5E1), size: 36),
     );
   }
 }

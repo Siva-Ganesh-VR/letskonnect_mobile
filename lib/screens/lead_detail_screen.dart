@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/app_colors.dart';
+import '../core/app_helpers.dart';
 import '../core/api_client.dart';
 import '../core/refresh_notifier.dart';
-import 'past_events_screen.dart';
 
 class LeadDetailScreen extends StatefulWidget {
   final String leadId;
@@ -307,41 +307,11 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
   }
 
 
-  String _initials(String name) {
-    final parts = name.trim().split(' ');
-    if (parts.length >= 2)
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    return name.isNotEmpty ? name[0].toUpperCase() : '?';
-  }
+  String _initials(String name) => AppHelpers.initials(name);
 
-  String _formatDate(String? iso) {
-    if (iso == null) return '';
-    final dt = DateTime.tryParse(iso);
-    if (dt == null) return '';
-    final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    final h = dt.hour > 12
-        ? dt.hour - 12
-        : dt.hour == 0
-        ? 12
-        : dt.hour;
-    final m = dt.minute.toString().padLeft(2, '0');
-    final ampm = dt.hour >= 12 ? 'PM' : 'AM';
-    return '${dt.day} ${months[dt.month - 1]} ${dt.year}, $h:$m $ampm';
-  }
+  String _formatDate(String? iso) => AppHelpers.formatDate(iso);
 
-  String _timeAgo(String? iso) {
-    if (iso == null) return '';
-    final dt = DateTime.tryParse(iso);
-    if (dt == null) return '';
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} mins ago';
-    if (diff.inHours < 24) return '${diff.inHours} hr ago';
-    return '${diff.inDays}d ago';
-  }
+  String _timeAgo(String? iso) => AppHelpers.timeAgo(iso);
 
   Future<void> _updateTag({String? temp, String? status, int? rating, bool? favorite}) async {
     final Map<String, dynamic> changedFields = {};
@@ -407,13 +377,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
     if (mounted) setState(() => _saving = false);
   }
 
-  String _toTitleCase(String text) {
-    if (text.isEmpty) return text;
-    return text.toLowerCase().split(' ').map((word) {
-      if (word.isEmpty) return word;
-      return word[0].toUpperCase() + word.substring(1);
-    }).join(' ');
-  }
+  String _toTitleCase(String text) => AppHelpers.toTitleCase(text);
 
   @override
   Widget build(BuildContext context) {
@@ -1074,24 +1038,4 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
     );
   }
 
-  Widget _bottomAction(
-      IconData icon, String label, Color color, VoidCallback? onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon,
-              color: onTap == null ? const Color(0xFF94A3B8) : color,
-              size: 26),
-          const SizedBox(height: 4),
-          Text(label,
-              style: TextStyle(
-                  fontSize: 11,
-                  color: onTap == null ? const Color(0xFF94A3B8) : color,
-                  fontWeight: FontWeight.w600)),
-        ],
-      ),
-    );
-  }
 }

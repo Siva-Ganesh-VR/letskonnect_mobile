@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../core/app_colors.dart';
+import '../core/app_helpers.dart';
 import '../core/api_client.dart';
 import 'login_screen.dart';
-import 'privacy_policy_screen.dart';
 import 'terms_conditions_screen.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -50,11 +50,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (mounted) setState(() => _loading = false);
   }
 
-  String _initials(String name) {
-    final parts = name.trim().split(' ');
-    if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    return name.isNotEmpty ? name[0].toUpperCase() : '?';
-  }
+  String _initials(String name) => AppHelpers.initials(name);
 
   Future<void> _signOut() async {
     final confirm = await showDialog<bool>(
