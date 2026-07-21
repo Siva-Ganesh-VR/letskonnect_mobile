@@ -64,8 +64,14 @@ class _ManualAddVisitorScreenState extends State<ManualAddVisitorScreen> {
     if (eventId == null) {
       final eventJson = await ApiClient.getEventJson();
       if (eventJson != null) {
-        final event = jsonDecode(eventJson);
-        eventId = event['id']?.toString();
+        try {
+          final decoded = jsonDecode(eventJson);
+          if (decoded is Map<String, dynamic>) {
+            eventId = decoded['id']?.toString();
+          }
+        } catch (_) {
+          // Corrupted stored JSON — proceed without eventId; API will reject if required.
+        }
       }
     }
 

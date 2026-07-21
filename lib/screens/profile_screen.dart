@@ -31,7 +31,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _loading = true);
     
     final stallJson = await ApiClient.getStallOwnerJson();
-    if (stallJson != null) _stallOwner = jsonDecode(stallJson);
+    if (stallJson != null) {
+      try {
+        _stallOwner = jsonDecode(stallJson);
+      } catch (_) {}
+    }
 
     final result = await ApiClient.call(
       () => ApiClient.dio.get('/api/v1/stall_owner/dashboard'),

@@ -23,6 +23,13 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _loading = false;
   bool _obscurePassword = true;
 
+  @override
+  void dispose() {
+    _mobileCtrl.dispose();
+    _passwordCtrl.dispose();
+    super.dispose();
+  }
+
   Future<void> _login() async {
     if (_mobileCtrl.text.length < 10) {
       ScaffoldMessenger.of(context).showSnackBar(

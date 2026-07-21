@@ -61,10 +61,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _loadFailed = false;
     });
     final stallJson = await ApiClient.getStallOwnerJson();
-    if (stallJson != null) _stallOwner = jsonDecode(stallJson);
+    if (stallJson != null) {
+      try {
+        _stallOwner = jsonDecode(stallJson);
+      } catch (_) {}
+    }
 
     final eventJson = await ApiClient.getEventJson();
-    if (eventJson != null) _event = jsonDecode(eventJson);
+    if (eventJson != null) {
+      try {
+        _event = jsonDecode(eventJson);
+      } catch (_) {}
+    }
 
     final result = await ApiClient.call(() => ApiClient.dio.get(
       '/api/v1/stall_owner/leads',

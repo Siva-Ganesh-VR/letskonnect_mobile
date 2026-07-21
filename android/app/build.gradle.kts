@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.letskonnect_stall_owner"
+    namespace = "in.stallconnect.stallowner"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 

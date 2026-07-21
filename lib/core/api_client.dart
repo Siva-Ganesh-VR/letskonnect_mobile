@@ -53,22 +53,29 @@ class ApiClient {
     ));
   }
 
+  static void _logDebug(String message) {
+    if (kDebugMode) {
+      print(message);
+    }
+  }
+
   static Future<ApiResult> call(Future<Response> Function() request) async {
     try {
       final response = await request();
       
-      final options = response.requestOptions;
-      final auth = options.headers['Authorization']?.toString() ?? 'NONE';
-      final maskedAuth = auth.length > 17 ? '${auth.substring(0, 17)}...' : auth;
-      
-      print('--- API DEBUG SUCCESS ---');
-      print('URL: ${options.uri}');
-      print('Method: ${options.method}');
-      print('Request Headers: ${options.headers}');
-      print('Request Body: ${options.data}');
-      print('Auth Header: $maskedAuth');
-      print('Status Code: ${response.statusCode}');
-      print('Raw Body: ${response.data}');
+      if (kDebugMode) {
+        final options = response.requestOptions;
+        final auth = options.headers['Authorization']?.toString() ?? 'NONE';
+        final maskedAuth = auth.length > 17 ? '${auth.substring(0, 17)}...' : auth;
+        _logDebug('--- API DEBUG SUCCESS ---');
+        _logDebug('URL: ${options.uri}');
+        _logDebug('Method: ${options.method}');
+        _logDebug('Request Headers: ${options.headers}');
+        _logDebug('Request Body: ${options.data}');
+        _logDebug('Auth Header: $maskedAuth');
+        _logDebug('Status Code: ${response.statusCode}');
+        _logDebug('Raw Body: ${response.data}');
+      }
 
       ApiResult result;
       if (response.data is Map<String, dynamic>) {
@@ -77,25 +84,28 @@ class ApiClient {
         result = ApiResult(success: false, error: 'Unexpected response from server');
       }
 
-      print('Parsed Success: ${result.success}');
-      print('Parsed Error: ${result.error}');
-      print('Data Type: ${result.data.runtimeType}');
-      print('--- DEBUG END ---');
+      if (kDebugMode) {
+        _logDebug('Parsed Success: ${result.success}');
+        _logDebug('Parsed Error: ${result.error}');
+        _logDebug('Data Type: ${result.data.runtimeType}');
+        _logDebug('--- DEBUG END ---');
+      }
 
       return result;
     } on DioException catch (e) {
-      final options = e.requestOptions;
-      final auth = options.headers['Authorization']?.toString() ?? 'NONE';
-      final maskedAuth = auth.length > 17 ? '${auth.substring(0, 17)}...' : auth;
-
-      print('--- API DEBUG DIO_ERROR ---');
-      print('URL: ${options.uri}');
-      print('Method: ${options.method}');
-      print('Request Headers: ${options.headers}');
-      print('Request Body: ${options.data}');
-      print('Auth Header: $maskedAuth');
-      print('Status Code: ${e.response?.statusCode}');
-      print('Raw Body: ${e.response?.data}');
+      if (kDebugMode) {
+        final options = e.requestOptions;
+        final auth = options.headers['Authorization']?.toString() ?? 'NONE';
+        final maskedAuth = auth.length > 17 ? '${auth.substring(0, 17)}...' : auth;
+        _logDebug('--- API DEBUG DIO_ERROR ---');
+        _logDebug('URL: ${options.uri}');
+        _logDebug('Method: ${options.method}');
+        _logDebug('Request Headers: ${options.headers}');
+        _logDebug('Request Body: ${options.data}');
+        _logDebug('Auth Header: $maskedAuth');
+        _logDebug('Status Code: ${e.response?.statusCode}');
+        _logDebug('Raw Body: ${e.response?.data}');
+      }
 
       ApiResult result;
       if (e.response?.data is Map<String, dynamic>) {
@@ -107,15 +117,19 @@ class ApiClient {
         result = ApiResult(success: false, error: 'Network error: ${e.message}');
       }
 
-      print('Parsed Success: ${result.success}');
-      print('Parsed Error: ${result.error}');
-      print('Data Type: ${result.data?.runtimeType}');
-      print('--- DEBUG END ---');
+      if (kDebugMode) {
+        _logDebug('Parsed Success: ${result.success}');
+        _logDebug('Parsed Error: ${result.error}');
+        _logDebug('Data Type: ${result.data?.runtimeType}');
+        _logDebug('--- DEBUG END ---');
+      }
 
       return result;
     } catch (e) {
-      print('--- API DEBUG UNEXPECTED_ERROR ---');
-      print('Error: $e');
+      if (kDebugMode) {
+        _logDebug('--- API DEBUG UNEXPECTED_ERROR ---');
+        _logDebug('Error: $e');
+      }
       return ApiResult(success: false, error: 'Unexpected error: $e');
     }
   }

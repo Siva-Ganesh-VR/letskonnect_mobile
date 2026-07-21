@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../core/app_helpers.dart';
@@ -55,9 +56,11 @@ class _EventLeadsScreenState extends State<EventLeadsScreen> {
     if (!mounted) return;
     setState(() => _loading = true);
 
-    print('DEBUG: EventLeadsScreen _loadData started');
-    print('DEBUG: widget.eventId = ${widget.eventId}');
-    print('DEBUG: widget.eventName = ${widget.eventName}');
+    if (kDebugMode) {
+      print('DEBUG: EventLeadsScreen _loadData started');
+      print('DEBUG: widget.eventId = ${widget.eventId}');
+      print('DEBUG: widget.eventName = ${widget.eventName}');
+    }
 
     final queryParams = {
       'event_id': widget.eventId,
@@ -68,19 +71,21 @@ class _EventLeadsScreenState extends State<EventLeadsScreen> {
       () => ApiClient.dio.get('/api/v1/stall_owner/leads', queryParameters: queryParams),
     );
 
-    print('DEBUG: API Request finished');
-    print('DEBUG: Endpoint = /api/v1/stall_owner/leads');
-    print('DEBUG: Query Params = $queryParams');
-    print('DEBUG: result.success = ${result.success}');
-    print('DEBUG: result.error = ${result.error}');
-    print('DEBUG: result.data type = ${result.data.runtimeType}');
+    if (kDebugMode) {
+      print('DEBUG: API Request finished');
+      print('DEBUG: Endpoint = /api/v1/stall_owner/leads');
+      print('DEBUG: Query Params = $queryParams');
+      print('DEBUG: result.success = ${result.success}');
+      print('DEBUG: result.error = ${result.error}');
+      print('DEBUG: result.data type = ${result.data.runtimeType}');
+    }
 
     if (result.success && result.data is List) {
       _leads = result.data as List<dynamic>;
-      print('DEBUG: result.data.length = ${_leads.length}');
+      if (kDebugMode) print('DEBUG: result.data.length = ${_leads.length}');
       _applyFilter();
     } else {
-      print('DEBUG: result.data = ${result.data}');
+      if (kDebugMode) print('DEBUG: result.data = ${result.data}');
     }
 
     if (mounted) setState(() => _loading = false);

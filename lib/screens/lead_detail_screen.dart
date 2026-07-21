@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/app_colors.dart';
@@ -31,6 +32,12 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _notesCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -67,32 +74,36 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
 
     final requestBody = {'lead': leadData};
 
-    print('==========================');
-    print('PATCH REQUEST (Manual Save)');
-    print('==========================');
-    print('URL: ${ApiClient.baseUrl}/api/v1/stall_owner/leads/${widget.leadId}');
-    print('HTTP Method: PATCH');
-    print('Content-Type: application/json');
-    print('Values being sent:');
-    print('- temperature: ${_temperature.isEmpty ? 'null' : _temperature}');
-    print('- status: $_status');
-    print('- interest_rating: $_interestRating');
-    print('Request Body (exact JSON):');
-    print(jsonEncode(requestBody));
-    print('==========================');
+    if (kDebugMode) {
+      print('==========================');
+      print('PATCH REQUEST (Manual Save)');
+      print('==========================');
+      print('URL: ${ApiClient.baseUrl}/api/v1/stall_owner/leads/${widget.leadId}');
+      print('HTTP Method: PATCH');
+      print('Content-Type: application/json');
+      print('Values being sent:');
+      print('- temperature: ${_temperature.isEmpty ? 'null' : _temperature}');
+      print('- status: $_status');
+      print('- interest_rating: $_interestRating');
+      print('Request Body (exact JSON):');
+      print(jsonEncode(requestBody));
+      print('==========================');
+    }
 
     final result = await ApiClient.call(() => ApiClient.dio.patch(
       '/api/v1/stall_owner/leads/${widget.leadId}',
       data: requestBody,
     ));
 
-    print('==========================');
-    print('PATCH RESPONSE (Manual Save)');
-    print('==========================');
-    print('Status Code: ${result.success ? '2xx' : 'Error'}');
-    print('Raw Response Body: ${result.data}');
-    if (result.error != null) print('Error: ${result.error}');
-    print('==========================');
+    if (kDebugMode) {
+      print('==========================');
+      print('PATCH RESPONSE (Manual Save)');
+      print('==========================');
+      print('Status Code: ${result.success ? '2xx' : 'Error'}');
+      print('Raw Response Body: ${result.data}');
+      if (result.error != null) print('Error: ${result.error}');
+      print('==========================');
+    }
 
     setState(() => _saving = false);
     if (!mounted) return;
@@ -273,28 +284,32 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
 
     final requestBody = {'lead': {'notes': result}};
 
-    print('==========================');
-    print('PATCH REQUEST (Add Note)');
-    print('==========================');
-    print('URL: ${ApiClient.baseUrl}/api/v1/stall_owner/leads/${widget.leadId}');
-    print('HTTP Method: PATCH');
-    print('Content-Type: application/json');
-    print('Request Body (exact JSON):');
-    print(jsonEncode(requestBody));
-    print('==========================');
+    if (kDebugMode) {
+      print('==========================');
+      print('PATCH REQUEST (Add Note)');
+      print('==========================');
+      print('URL: ${ApiClient.baseUrl}/api/v1/stall_owner/leads/${widget.leadId}');
+      print('HTTP Method: PATCH');
+      print('Content-Type: application/json');
+      print('Request Body (exact JSON):');
+      print(jsonEncode(requestBody));
+      print('==========================');
+    }
 
     final patchResult = await ApiClient.call(() => ApiClient.dio.patch(
       '/api/v1/stall_owner/leads/${widget.leadId}',
       data: requestBody,
     ));
 
-    print('==========================');
-    print('PATCH RESPONSE (Add Note)');
-    print('==========================');
-    print('Status Code: ${patchResult.success ? '2xx' : 'Error'}');
-    print('Raw Response Body: ${patchResult.data}');
-    if (patchResult.error != null) print('Error: ${patchResult.error}');
-    print('==========================');
+    if (kDebugMode) {
+      print('==========================');
+      print('PATCH RESPONSE (Add Note)');
+      print('==========================');
+      print('Status Code: ${patchResult.success ? '2xx' : 'Error'}');
+      print('Raw Response Body: ${patchResult.data}');
+      if (patchResult.error != null) print('Error: ${patchResult.error}');
+      print('==========================');
+    }
 
     if (patchResult.success && patchResult.data != null) {
       _lead = patchResult.data as Map<String, dynamic>;
