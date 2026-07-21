@@ -19,7 +19,8 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic>? _stallOwner;
   Map<String, dynamic>? _event;
-  List<dynamic> _allLeads = [];
+  List<dynamic> _allLeads = []; // Still needed for the hourly graph
+  List<dynamic> _recentLeads = []; // From dashboard API
   bool _loading = true;
   bool _loadFailed = false;
   int _totalCount = 0;
@@ -60,27 +61,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _loading = true;
       _loadFailed = false;
     });
-    final stallJson = await ApiClient.getStallOwnerJson();
-    if (stallJson != null) {
-      try {
-        _stallOwner = jsonDecode(stallJson);
-      } catch (_) {}
+
+    final dashboardResult = await ApiClient.call(
+      () => ApiClient.dio.get('/api/v1/stall_owner/dashboard'),
+    );
+
+    final leadsResult = await ApiClient.call(
+      () => ApiClient.dio.get('/api/v1/stall_owner/leads',
+          queryParameters: {'per_page': 1000}),
+    );
+
+    if (dashboardResult.success && dashboardResult.data is Map) {
+      final data = dashboardResult.data as Map<String, dynamic>;
+      _stallOwner = data['stall_owner'];
+      _recentLeads = data['latest_event_based_leads'] ?? [];
+      _totalCount = data['latest_event_based_lead_counts'] ?? 0;
+
+      // Update event info if present in dashboard
+      if (data['event'] != null) {
+        _event = data['event'];
+      } else {
+        // Fallback to local storage if dashboard doesn't provide it
+        final eventJson = await ApiClient.getEventJson();
+        if (eventJson != null) {
+          try {
+            _event = jsonDecode(eventJson);
+          } catch (_) {}
+        }
+      }
     }
 
-    final eventJson = await ApiClient.getEventJson();
-    if (eventJson != null) {
-      try {
-        _event = jsonDecode(eventJson);
-      } catch (_) {}
-    }
-
-    final result = await ApiClient.call(() => ApiClient.dio.get(
-      '/api/v1/stall_owner/leads',
-      queryParameters: {'per_page': 1000},
-    ));
-    if (result.success && result.data is List) {
-      _allLeads = result.data as List<dynamic>;
-      _totalCount = result.meta?['total'] ?? _allLeads.length;
+    if (leadsResult.success && leadsResult.data is List) {
+      _allLeads = leadsResult.data as List<dynamic>;
 
       if (_event != null) {
         final start = DateTime.tryParse(_event!['start_date'] ?? '');
@@ -94,14 +106,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
           final eventStartDay = DateTime(start.year, start.month, start.day);
           _selectedDayOffset = today.difference(eventStartDay).inDays;
           if (_selectedDayOffset < 0) _selectedDayOffset = 0;
-          if (_selectedDayOffset >= _totalDays) _selectedDayOffset = _totalDays - 1;
+          if (_selectedDayOffset >= _totalDays)
+            _selectedDayOffset = _totalDays - 1;
         }
       }
-    } else {
-      _loadFailed = !result.success;
-      _allLeads = [];
-      _totalCount = 0;
     }
+
+    if (!dashboardResult.success && !leadsResult.success) {
+      _loadFailed = true;
+    }
+
     if (mounted) setState(() => _loading = false);
   }
 
@@ -546,14 +560,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     boxShadow: _cardShadow,
                   ),
                   child: Column(
-                    children: List.generate(_allLeads.length > 5 ? 5 : _allLeads.length, (i) {
-                      final lead = _allLeads[i];
-                      final visitor = lead['visitor'] ?? {};
-                      final name = _toTitleCase(visitor['full_name'] ?? 'Unknown');
-                      final phone = visitor['mobile_number'] ?? '';
-                      final location = visitor['location'] ?? '';
+                    children: List.generate(_recentLeads.length, (i) {
+                      final lead = _recentLeads[i];
+                      final name = _toTitleCase(lead['visitor_name'] ?? 'Unknown');
+                      final phone = lead['mobile_number'] ?? '';
+                      final location = lead['location'] ?? '';
                       final color = _avatarColor(name);
-                      final isLast = i == (_allLeads.length > 5 ? 4 : _allLeads.length - 1);
+                      final isLast = i == _recentLeads.length - 1;
                       return InkWell(
                         borderRadius: BorderRadius.vertical(
                           top: i == 0 ? const Radius.circular(22) : Radius.zero,
