@@ -21,8 +21,8 @@ class ApiResult {
 }
 
 class ApiClient {
-  static const String devBaseUrl  = 'http://86.48.3.78';
-  static const String prodBaseUrl = 'http://86.48.3.78';
+  static const String devBaseUrl  = 'https://stallconnect.com';
+  static const String prodBaseUrl = 'https://stallconnect.com';
   static String get baseUrl => kDebugMode ? devBaseUrl : prodBaseUrl;
 
   static final _storage = const FlutterSecureStorage();
