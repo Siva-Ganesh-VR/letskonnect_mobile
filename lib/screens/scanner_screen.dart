@@ -13,9 +13,82 @@ class ScannerScreen extends StatefulWidget {
   State<ScannerScreen> createState() => _ScannerScreenState();
 }
 
-class _ScannerScreenState extends State<ScannerScreen> {
+class _ScannerScreenState extends State<ScannerScreen> with WidgetsBindingObserver {
   final MobileScannerController _controller = MobileScannerController();
   bool _isProcessing = false;
+  bool _permissionGranted = false;
+  bool _permissionChecked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _checkAndRequestPermission();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // If user comes back from Settings after granting permission, restart scanner
+    if (state == AppLifecycleState.resumed && _permissionChecked && !_permissionGranted) {
+      _checkAndRequestPermission();
+    }
+  }
+
+  Future<void> _checkAndRequestPermission() async {
+    final state = await _controller.requestPermission();
+    if (!mounted) return;
+
+    setState(() {
+      _permissionChecked = true;
+      _permissionGranted = state == MobileScannerAuthorizationState.authorized;
+    });
+
+    if (!_permissionGranted) {
+      // Permission denied — show dialog
+      _showPermissionDialog();
+    }
+  }
+
+  void _showPermissionDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A2E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Camera Permission Required',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+        ),
+        content: const Text(
+          'StallConnect needs camera access to scan visitor QR passes.\n\nPlease allow camera permission to continue.',
+          style: TextStyle(color: Colors.white70, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pop(context); // go back to previous screen
+            },
+            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              // Opens app settings so user can grant permission manually
+              MobileScannerController.requestPermission();
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _onDetect(BarcodeCapture capture) async {
     if (_isProcessing) return;
@@ -84,6 +157,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     super.dispose();
   }
@@ -94,10 +168,16 @@ class _ScannerScreenState extends State<ScannerScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          MobileScanner(
-            controller: _controller,
-            onDetect: _onDetect,
-          ),
+          // Show scanner only if permission is granted
+          if (_permissionGranted)
+            MobileScanner(
+              controller: _controller,
+              onDetect: _onDetect,
+            )
+          else
+            // Show permission prompt UI while waiting or if denied
+            _buildPermissionUI(),
+
           SafeArea(
             child: Column(
               children: [
@@ -124,34 +204,58 @@ class _ScannerScreenState extends State<ScannerScreen> {
                               color: Colors.white,
                               fontSize: 18,
                               fontWeight: FontWeight.w700)),
-                      GestureDetector(
-                        onTap: () => _controller.toggleTorch(),
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.4),
-                            shape: BoxShape.circle,
+                      // Only show torch button when camera is active
+                      if (_permissionGranted)
+                        GestureDetector(
+                          onTap: () => _controller.toggleTorch(),
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.4),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.flash_on_rounded,
+                                color: Colors.white, size: 20),
                           ),
-                          child: const Icon(Icons.flash_on_rounded,
-                              color: Colors.white, size: 20),
-                        ),
-                      ),
+                        )
+                      else
+                        const SizedBox(width: 40),
                     ],
                   ),
                 ),
                 const Spacer(),
+                // Scanner frame
                 Container(
                   width: 240,
                   height: 240,
                   decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.primary, width: 3),
+                    border: Border.all(
+                      color: _permissionGranted
+                          ? AppColors.primary
+                          : Colors.white24,
+                      width: 3,
+                    ),
                     borderRadius: BorderRadius.circular(16),
                   ),
+                  // Show hint icon when permission not yet granted
+                  child: _permissionGranted
+                      ? null
+                      : const Center(
+                          child: Icon(
+                            Icons.camera_alt_outlined,
+                            color: Colors.white38,
+                            size: 48,
+                          ),
+                        ),
                 ),
                 const SizedBox(height: 24),
-                const Text('Point camera at visitor badge',
-                    style: TextStyle(color: Colors.white70, fontSize: 14)),
+                Text(
+                  _permissionGranted
+                      ? 'Point camera at visitor badge'
+                      : 'Camera permission required',
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                ),
                 const Spacer(),
                 if (_isProcessing)
                   Container(
@@ -176,12 +280,43 @@ class _ScannerScreenState extends State<ScannerScreen> {
                       ],
                     ),
                   )
+                else if (!_permissionGranted && _permissionChecked)
+                  // Show retry button if permission was denied
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 40),
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 28, vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24)),
+                      ),
+                      onPressed: _checkAndRequestPermission,
+                      icon: const Icon(Icons.camera_alt_outlined, size: 18),
+                      label: const Text('Allow Camera Access',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                    ),
+                  )
                 else
                   const SizedBox(height: 40),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPermissionUI() {
+    return Container(
+      color: Colors.black,
+      child: const Center(
+        child: CircularProgressIndicator(
+          color: AppColors.primary,
+          strokeWidth: 2,
+        ),
       ),
     );
   }
