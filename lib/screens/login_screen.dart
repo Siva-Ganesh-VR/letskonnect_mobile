@@ -7,6 +7,8 @@ import '../core/app_colors.dart';
 import '../core/api_client.dart';
 import '../widgets/login_header.dart';
 import 'home_screen.dart';
+import 'privacy_policy_screen.dart';
+import 'terms_conditions_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -258,11 +260,43 @@ class _LoginScreenState extends State<LoginScreen> {
                           size: 18, color: Color(0xFF0D9488)),
                     ],
                   ),
+                  const SizedBox(height: 32),
+
+                  // Legal Footer
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _legalLink(context, 'Privacy Policy', const PrivacyPolicyScreen()),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8),
+                        child: Text('•', style: TextStyle(color: Color(0xFFCBD5E1))),
+                      ),
+                      _legalLink(context, 'Terms & Conditions', const TermsConditionsScreen()),
+                    ],
+                  ),
                   const SizedBox(height: 20),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _legalLink(BuildContext context, String text, Widget screen) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => screen),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Color(0xFF64748B),
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          decoration: TextDecoration.underline,
         ),
       ),
     );

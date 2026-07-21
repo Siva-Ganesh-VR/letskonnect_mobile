@@ -42,6 +42,14 @@ class _EventsScreenState extends State<EventsScreen> {
     );
     if (result.success && result.data is Map && result.data['events'] is List) {
       _allEvents = result.data['events'] as List<dynamic>;
+
+      // Sort events by start_date descending (latest first)
+      _allEvents.sort((a, b) {
+        final aDate = DateTime.tryParse(a['start_date'] ?? '') ?? DateTime(0);
+        final bDate = DateTime.tryParse(b['start_date'] ?? '') ?? DateTime(0);
+        return bDate.compareTo(aDate);
+      });
+
       _applyFilters();
     } else {
       _error = true;

@@ -6,7 +6,9 @@ import '../core/api_client.dart';
 import '../core/refresh_notifier.dart';
 
 class ManualAddVisitorScreen extends StatefulWidget {
-  const ManualAddVisitorScreen({super.key});
+  final String? eventId;
+  final String? eventName;
+  const ManualAddVisitorScreen({super.key, this.eventId, this.eventName});
 
   @override
   State<ManualAddVisitorScreen> createState() => _ManualAddVisitorScreenState();
@@ -58,11 +60,13 @@ class _ManualAddVisitorScreenState extends State<ManualAddVisitorScreen> {
 
     setState(() => _loading = true);
 
-    String? eventId;
-    final eventJson = await ApiClient.getEventJson();
-    if (eventJson != null) {
-      final event = jsonDecode(eventJson);
-      eventId = event['id']?.toString();
+    String? eventId = widget.eventId;
+    if (eventId == null) {
+      final eventJson = await ApiClient.getEventJson();
+      if (eventJson != null) {
+        final event = jsonDecode(eventJson);
+        eventId = event['id']?.toString();
+      }
     }
 
     final data = {

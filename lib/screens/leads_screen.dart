@@ -53,13 +53,47 @@ class _LeadsScreenState extends State<LeadsScreen> {
     if (!mounted) return;
     setState(() => _loading = true);
 
-    final result = await ApiClient.call(
-          () => ApiClient.dio.get('/api/v1/stall_owner/leads', queryParameters: {'per_page': 1000}),
+    // 1. Load the events first using the dashboard endpoint
+    final dashResult = await ApiClient.call(
+      () => ApiClient.dio.get('/api/v1/stall_owner/dashboard'),
     );
-    if (result.success && result.data is List) {
-      _leads = result.data as List<dynamic>;
-      
-      // Sort newest to oldest
+
+    List<dynamic> allAggregatedLeads = [];
+
+    if (dashResult.success && dashResult.data is Map && dashResult.data['events'] is List) {
+      final events = dashResult.data['events'] as List<dynamic>;
+
+      // 2. Prepare API calls for every event in the array
+      final leadRequests = events.map((event) {
+        final eventId = event['id'].toString();
+        return ApiClient.call(
+          () => ApiClient.dio.get('/api/v1/stall_owner/leads',
+              queryParameters: {'event_id': eventId, 'per_page': 1000}),
+        );
+      }).toList();
+
+      // 3. Wait for all API requests to complete
+      final results = await Future.wait(leadRequests);
+
+      // 4. Merge all returned lead lists into one list
+      for (var res in results) {
+        if (res.success && res.data is List) {
+          allAggregatedLeads.addAll(res.data as List<dynamic>);
+        }
+      }
+
+      // 5. Remove duplicate leads using the lead id
+      final seenIds = <dynamic>{};
+      final uniqueLeads = <dynamic>[];
+      for (var lead in allAggregatedLeads) {
+        if (!seenIds.contains(lead['id'])) {
+          uniqueLeads.add(lead);
+          seenIds.add(lead['id']);
+        }
+      }
+      _leads = uniqueLeads;
+
+      // 6. Sort the merged list by scanned_at descending (latest first)
       _leads.sort((a, b) {
         final aTime = DateTime.tryParse(a['scanned_at'] ?? '') ?? DateTime(0);
         final bTime = DateTime.tryParse(b['scanned_at'] ?? '') ?? DateTime(0);
@@ -68,6 +102,7 @@ class _LeadsScreenState extends State<LeadsScreen> {
 
       _applyFilter();
     }
+
     if (mounted) setState(() => _loading = false);
   }
 

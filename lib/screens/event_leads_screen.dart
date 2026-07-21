@@ -191,7 +191,12 @@ class _EventLeadsScreenState extends State<EventLeadsScreen> {
           OutlinedButton.icon(
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const ManualAddVisitorScreen()),
+              MaterialPageRoute(
+                builder: (_) => ManualAddVisitorScreen(
+                  eventId: widget.eventId,
+                  eventName: widget.eventName,
+                ),
+              ),
             ).then((_) => _loadData()),
             icon: const Icon(Icons.add, color: Colors.white, size: 18),
             label: const Text('Add Lead',

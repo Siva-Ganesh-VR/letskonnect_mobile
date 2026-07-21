@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../core/api_client.dart';
 import 'login_screen.dart';
+import 'privacy_policy_screen.dart';
+import 'terms_conditions_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -162,6 +164,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
 
+            const SizedBox(height: 12),
+
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 2))],
+              ),
+              child: Column(
+                children: [
+                  _LegalRow(
+                    icon: Icons.privacy_tip_rounded,
+                    label: 'Privacy Policy',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
+                    ),
+                    isFirst: true,
+                  ),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
+                  _LegalRow(
+                    icon: Icons.description_rounded,
+                    label: 'Terms & Conditions',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const TermsConditionsScreen()),
+                    ),
+                    isLast: true,
+                  ),
+                ],
+              ),
+            ),
+
             const SizedBox(height: 24),
 
             SizedBox(
@@ -209,6 +244,42 @@ class _InfoRow extends StatelessWidget {
           const Spacer(),
           Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
         ],
+      ),
+    );
+  }
+}
+
+class _LegalRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isFirst;
+  final bool isLast;
+  const _LegalRow({required this.icon, required this.label, required this.onTap, this.isFirst = false, this.isLast = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.vertical(
+        top: isFirst ? const Radius.circular(16) : Radius.zero,
+        bottom: isLast ? const Radius.circular(16) : Radius.zero,
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(left: 20, right: 20, top: isFirst ? 18 : 14, bottom: isLast ? 18 : 14),
+        child: Row(
+          children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(10)),
+              child: Icon(icon, color: const Color(0xFF64748B), size: 18),
+            ),
+            const SizedBox(width: 16),
+            Text(label, style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A), fontWeight: FontWeight.w500)),
+            const Spacer(),
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8), size: 20),
+          ],
+        ),
       ),
     );
   }

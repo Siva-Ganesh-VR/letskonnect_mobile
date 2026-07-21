@@ -307,28 +307,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ],
                                 ),
                               ),
-                              SizedBox(
-                                height: 42,
-                                width: 42,
-                                child: Stack(
-                                  clipBehavior: Clip.none,
-                                  children: [
-                                    Container(
-                                      width: 42,
-                                      height: 42,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.circle,
-                                        boxShadow: _smallShadow,
-                                      ),
-                                      child: const Center(
-                                        child: Icon(Icons.notifications_rounded,
-                                            color: AppColors.primary, size: 20),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
                             ],
                           ),
                         ),
