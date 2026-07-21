@@ -1,5 +1,5 @@
-name: letskonnect_stall_owner
-description: LetsKonnect Stall Owner App
+name: stallconnect_stall_owner
+description: StallConnect - Event Lead Management for Exhibitors
 publish_to: 'none'
 version: 1.0.0+1
 

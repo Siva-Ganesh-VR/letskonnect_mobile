@@ -5,6 +5,7 @@ import '../core/api_client.dart';
 import 'login_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'terms_conditions_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -177,19 +178,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _LegalRow(
                     icon: Icons.privacy_tip_rounded,
                     label: 'Privacy Policy',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
+                    onTap: () => launchUrl(
+                      Uri.parse('https://stallconnect.in/privacy.html'),
+                      mode: LaunchMode.externalApplication,
                     ),
                     isFirst: true,
                   ),
-                  const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
+
+                  const Divider(
+                    height: 1,
+                    color: Color(0xFFF1F5F9),
+                    indent: 56,
+                  ),
+
                   _LegalRow(
                     icon: Icons.description_rounded,
                     label: 'Terms & Conditions',
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const TermsConditionsScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => const TermsConditionsScreen(),
+                      ),
+                    ),
+                  ),
+
+                  const Divider(
+                    height: 1,
+                    color: Color(0xFFF1F5F9),
+                    indent: 56,
+                  ),
+
+                  _LegalRow(
+                    icon: Icons.delete_outline_rounded,
+                    label: 'Delete My Account',
+                    onTap: () => launchUrl(
+                      Uri.parse(
+                        'mailto:support@stallconnect.in?subject=Account%20Deletion%20Request',
+                      ),
+                      mode: LaunchMode.externalApplication,
                     ),
                     isLast: true,
                   ),

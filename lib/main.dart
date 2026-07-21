@@ -18,7 +18,7 @@ class LetsKonnectApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Expoza',
+      title: 'StallConnect',
       theme: ThemeData(
         useMaterial3: true,
         fontFamily: 'Inter',

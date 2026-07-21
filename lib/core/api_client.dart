@@ -20,7 +20,10 @@ class ApiResult {
 }
 
 class ApiClient {
-  static const baseUrl = 'http://86.48.3.78';
+  static const String devBaseUrl = 'http://86.48.3.78';
+  static const String prodBaseUrl = 'https://stallconnect.in';
+
+  static String get baseUrl => kDebugMode ? devBaseUrl : prodBaseUrl;
 
   static final _storage = const FlutterSecureStorage();
   static late Dio dio;
