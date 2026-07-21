@@ -42,7 +42,7 @@ class LoginHeader extends StatelessWidget {
                 children: [
                   // Logo Image centered in the available width
                   Image.asset(
-                    'assets/images/expoza_branding.png',
+                    'assets/images/branding.png',
                     width: MediaQuery.of(context).size.width * 0.85,
                     height: 140,
                     fit: BoxFit.contain,
