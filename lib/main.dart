@@ -4,15 +4,23 @@ import 'core/api_client.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   ApiClient.init();
-  runApp(const LetsKonnectApp());
+
+  // Resolve the session before the first frame. The native splash stays up
+  // until Flutter paints, so the first thing drawn is the real screen —
+  // no second in-app splash.
+  final isLoggedIn = await ApiClient.getToken() != null;
+
+  runApp(LetsKonnectApp(isLoggedIn: isLoggedIn));
 }
 
 class LetsKonnectApp extends StatelessWidget {
-  const LetsKonnectApp({super.key});
+  final bool isLoggedIn;
+
+  const LetsKonnectApp({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
@@ -71,53 +79,7 @@ class LetsKonnectApp extends StatelessWidget {
           const TextStyle(color: Color(0xFF64748B), fontSize: 14),
         ),
       ),
-      home: const SplashScreen(),
-    );
-  }
-}
-
-class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
-
-  @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    _checkLogin();
-  }
-
-  Future<void> _checkLogin() async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    final token = await ApiClient.getToken();
-    if (!mounted) return;
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => token != null ? HomeScreen() : const LoginScreen(),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF14B8A6),
-      body: Center(
-        child: Container(
-          width: 200,
-          height: 80,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Image.asset('assets/icon/app_icon.png', fit: BoxFit.contain),
-        ),
-      ),
+      home: isLoggedIn ? const HomeScreen() : const LoginScreen(),
     );
   }
 }
