@@ -191,7 +191,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'Stall Owner';
     final stallNo = _stallOwner?['stall_number'] ?? '';
     final eventName = _event?['name'] ?? 'Event';
-
+    print('Name: $name');
+    print('Stall No: $stallNo');
+    print('Event Name: $eventName');
+    print('Selected Day Offset: $_selectedDayOffset');
+    print('Event: $_event');
     // Calculate current day's date based on offset
     String displayDate = 'N/A';
     if (_event != null && _event!['start_date'] != null) {

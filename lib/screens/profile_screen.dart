@@ -40,7 +40,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final result = await ApiClient.call(
       () => ApiClient.dio.get('/api/v1/stall_owner/dashboard'),
     );
-
+    print(result);
+    print("result----------------------------");
     if (result.success && result.data is Map) {
       final data = result.data as Map<String, dynamic>;
       if (data['events'] is List) {
