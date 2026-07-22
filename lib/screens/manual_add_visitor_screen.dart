@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/app_colors.dart';
+import '../core/app_helpers.dart';
 import '../core/api_client.dart';
 import '../core/refresh_notifier.dart';
 
@@ -17,15 +17,20 @@ class ManualAddVisitorScreen extends StatefulWidget {
 class _ManualAddVisitorScreenState extends State<ManualAddVisitorScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _loading = false;
+  bool _fetchingEvents = false;
 
   final _nameCtrl = TextEditingController();
   final _mobileCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
+  final _foodCouponCtrl = TextEditingController();
 
+  String? _selectedEventId;
   String? _selectedCategory;
   String? _selectedLookingFor;
   String? _decisionMaker;
+
+  List<dynamic> _events = [];
 
   final List<String> _categories = [
     'Technology',
@@ -47,43 +52,62 @@ class _ManualAddVisitorScreenState extends State<ManualAddVisitorScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _selectedEventId = widget.eventId;
+    _loadEvents();
+  }
+
+  @override
   void dispose() {
     _nameCtrl.dispose();
     _mobileCtrl.dispose();
     _locationCtrl.dispose();
     _notesCtrl.dispose();
+    _foodCouponCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadEvents() async {
+    setState(() => _fetchingEvents = true);
+    final result = await ApiClient.call(
+      () => ApiClient.dio.get('/api/v1/stall_owner/dashboard'),
+    );
+    if (result.success && result.data is Map && result.data['events'] is List) {
+      _events = result.data['events'] as List<dynamic>;
+      AppHelpers.sortEvents(_events);
+
+      if (_selectedEventId == null && _events.isNotEmpty) {
+        final best = AppHelpers.findLatestRelevantEvent(_events);
+        if (best != null) {
+          _selectedEventId = best['id']?.toString();
+        }
+      }
+    }
+    if (mounted) setState(() => _fetchingEvents = false);
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _loading = true);
-
-    String? eventId = widget.eventId;
-    if (eventId == null) {
-      final eventJson = await ApiClient.getEventJson();
-      if (eventJson != null) {
-        try {
-          final decoded = jsonDecode(eventJson);
-          if (decoded is Map<String, dynamic>) {
-            eventId = decoded['id']?.toString();
-          }
-        } catch (_) {
-          // Corrupted stored JSON — proceed without eventId; API will reject if required.
-        }
-      }
+    if (_selectedEventId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select an event')),
+      );
+      return;
     }
 
+    setState(() => _loading = true);
+
     final data = {
-      "event_id": eventId,
+      "event_id": _selectedEventId,
       "visitor": {
         "full_name": _nameCtrl.text.trim(),
         "mobile_number": _mobileCtrl.text.trim(),
         "location": _locationCtrl.text.trim(),
         "business_category": _selectedCategory,
         "looking_for": _selectedLookingFor,
-        "decision_maker": _decisionMaker == 'Yes',
+        "decision_maker": _decisionMaker == null ? null : (_decisionMaker == 'Yes'),
         "reg_type": "Manual",
         "mobile_verified": true
       },
@@ -101,6 +125,7 @@ class _ManualAddVisitorScreenState extends State<ManualAddVisitorScreen> {
         RefreshNotifier.refreshLeads();
         Navigator.pop(context, true);
       } else {
+        // Issue #6: Show exact backend error
         String error = result.error ?? 'Failed to create lead';
         if (result.data != null && result.data['already_scanned'] == true) {
           error = "Visitor already exists for this stall.";
@@ -131,6 +156,24 @@ class _ManualAddVisitorScreenState extends State<ManualAddVisitorScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (_fetchingEvents && _events.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 20),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else
+                      _buildDropdown(
+                        label: 'Select Event *',
+                        value: _selectedEventId,
+                        hint: 'Please Select Event',
+                        items: _events.map((e) => DropdownMenuItem<String>(
+                          value: e['id']?.toString(),
+                          child: Text(e['name'] ?? 'Unknown Event'),
+                        )).toList(),
+                        onChanged: (v) => setState(() => _selectedEventId = v),
+                        validator: (v) => v == null ? 'Please select an event' : null,
+                      ),
+
                     _buildTextField(
                       controller: _nameCtrl,
                       label: 'Full Name *',
@@ -172,25 +215,44 @@ class _ManualAddVisitorScreenState extends State<ManualAddVisitorScreen> {
                     const SizedBox(height: 16),
 
                     _buildDropdown(
-                      label: 'Business Category *',
+                      label: 'Business Category',
                       value: _selectedCategory,
-                      items: _categories,
+                      hint: 'Please Select',
+                      items: _categories.map((c) => DropdownMenuItem<String>(
+                        value: c,
+                        child: Text(c),
+                      )).toList(),
                       onChanged: (v) => setState(() => _selectedCategory = v),
-                      validator: (v) => v == null ? 'Please select a category' : null,
                     ),
                     _buildDropdown(
-                      label: 'Looking For *',
+                      label: 'Looking For',
                       value: _selectedLookingFor,
-                      items: _lookingForOptions,
+                      hint: 'Please Select',
+                      items: _lookingForOptions.map((o) => DropdownMenuItem<String>(
+                        value: o,
+                        child: Text(o),
+                      )).toList(),
                       onChanged: (v) => setState(() => _selectedLookingFor = v),
-                      validator: (v) => v == null ? 'Please select an option' : null,
                     ),
                     _buildDropdown(
-                      label: 'Decision Maker? *',
+                      label: 'Decision Maker?',
                       value: _decisionMaker,
-                      items: ['Yes', 'No'],
+                      hint: 'Please Select',
+                      items: ['Yes', 'No'].map((m) => DropdownMenuItem<String>(
+                        value: m,
+                        child: Text(m),
+                      )).toList(),
                       onChanged: (v) => setState(() => _decisionMaker = v),
-                      validator: (v) => v == null ? 'Please select an option' : null,
+                    ),
+
+                    _buildTextField(
+                      controller: _foodCouponCtrl,
+                      label: 'Food Coupon Count',
+                      hint: 'Enter number of coupons',
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      // NOTE: food_coupon_count is currently UI-only. 
+                      // Backend persistence is pending backend support.
                     ),
 
                     _buildTextField(
@@ -324,8 +386,9 @@ class _ManualAddVisitorScreenState extends State<ManualAddVisitorScreen> {
   Widget _buildDropdown({
     required String label,
     required String? value,
-    required List<String> items,
+    required List<DropdownMenuItem<String>> items,
     required void Function(String?) onChanged,
+    String? hint,
     String? Function(String?)? validator,
   }) {
     return Padding(
@@ -344,12 +407,8 @@ class _ManualAddVisitorScreenState extends State<ManualAddVisitorScreen> {
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
             value: value,
-            items: items.map((String item) {
-              return DropdownMenuItem<String>(
-                value: item,
-                child: Text(item),
-              );
-            }).toList(),
+            hint: hint != null ? Text(hint) : null,
+            items: items,
             onChanged: onChanged,
             validator: validator,
             decoration: InputDecoration(

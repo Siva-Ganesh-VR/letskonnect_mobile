@@ -45,11 +45,7 @@ class _EventsScreenState extends State<EventsScreen> {
       _allEvents = result.data['events'] as List<dynamic>;
 
       // Sort events by start_date descending (latest first)
-      _allEvents.sort((a, b) {
-        final aDate = DateTime.tryParse(a['start_date'] ?? '') ?? DateTime(0);
-        final bDate = DateTime.tryParse(b['start_date'] ?? '') ?? DateTime(0);
-        return bDate.compareTo(aDate);
-      });
+      AppHelpers.sortEvents(_allEvents);
 
       _applyFilters();
     } else {
