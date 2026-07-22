@@ -63,11 +63,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
 
     final dashboardResult = await ApiClient.call(
-      () => ApiClient.dio.get('/api/v1/stall_owner/dashboard'),
+          () => ApiClient.dio.get('/api/v1/stall_owner/dashboard'),
     );
 
     final leadsResult = await ApiClient.call(
-      () => ApiClient.dio.get('/api/v1/stall_owner/leads',
+          () => ApiClient.dio.get('/api/v1/stall_owner/leads',
           queryParameters: {'per_page': 1000}),
     );
 
@@ -489,7 +489,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Recent Five Leads',
+                    const Text('Recent Five Leads - ',
                         style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
@@ -585,9 +585,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             border: isLast
                                 ? null
                                 : const Border(
-                                    bottom: BorderSide(
-                                        color: Color(0xFFF1F5F9), width: 1),
-                                  ),
+                              bottom: BorderSide(
+                                  color: Color(0xFFF1F5F9), width: 1),
+                            ),
                           ),
                           child: Row(
                             children: [
@@ -614,7 +614,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     const SizedBox(height: 2),
                                     Row(
                                       mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
+                                      MainAxisAlignment.spaceBetween,
                                       children: [
                                         if (phone.isNotEmpty)
                                           Text(phone,

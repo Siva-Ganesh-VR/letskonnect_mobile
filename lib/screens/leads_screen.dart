@@ -56,7 +56,7 @@ class _LeadsScreenState extends State<LeadsScreen> {
 
     // 1. Load the events first using the dashboard endpoint
     final dashResult = await ApiClient.call(
-      () => ApiClient.dio.get('/api/v1/stall_owner/dashboard'),
+          () => ApiClient.dio.get('/api/v1/stall_owner/dashboard'),
     );
 
     List<dynamic> allAggregatedLeads = [];
@@ -68,7 +68,7 @@ class _LeadsScreenState extends State<LeadsScreen> {
       final leadRequests = events.map((event) {
         final eventId = event['id'].toString();
         return ApiClient.call(
-          () => ApiClient.dio.get('/api/v1/stall_owner/leads',
+              () => ApiClient.dio.get('/api/v1/stall_owner/leads',
               queryParameters: {'event_id': eventId, 'per_page': 1000}),
         );
       }).toList();
@@ -171,7 +171,7 @@ class _LeadsScreenState extends State<LeadsScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child:
-                const Text('OK', style: TextStyle(fontWeight: FontWeight.w700)),
+            const Text('OK', style: TextStyle(fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -305,13 +305,13 @@ class _LeadsScreenState extends State<LeadsScreen> {
                       f == 'all'
                           ? 'All'
                           : f == 'favorite'
-                              ? 'Favorite'
-                              : _statusLabel({
-                                  'status': ['hot', 'warm', 'cold'].contains(f)
-                                      ? 'new'
-                                      : f,
-                                  'temperature': f
-                                }),
+                          ? 'Favorite'
+                          : _statusLabel({
+                        'status': ['hot', 'warm', 'cold'].contains(f)
+                            ? 'new'
+                            : f,
+                        'temperature': f
+                      }),
                       style: TextStyle(
                         color: active
                             ? Colors.white
@@ -366,7 +366,8 @@ class _LeadsScreenState extends State<LeadsScreen> {
                       context,
                       MaterialPageRoute(
                           builder: (_) => LeadDetailScreen(
-                              leadId: lead['id'].toString())),
+                              leadId: lead['id'].toString(),
+                              eventId: lead['event_id']?.toString())),
                     ).then((_) => _loadLeads()),
                     onMoreTap: () => _showEventsDialog(name, lead),
                   );

@@ -68,7 +68,7 @@ class _EventLeadsScreenState extends State<EventLeadsScreen> {
     };
 
     final result = await ApiClient.call(
-      () => ApiClient.dio.get('/api/v1/stall_owner/leads', queryParameters: queryParams),
+          () => ApiClient.dio.get('/api/v1/stall_owner/leads', queryParameters: queryParams),
     );
 
     if (kDebugMode) {
@@ -154,7 +154,7 @@ class _EventLeadsScreenState extends State<EventLeadsScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child:
-                const Text('OK', style: TextStyle(fontWeight: FontWeight.w700)),
+            const Text('OK', style: TextStyle(fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -290,13 +290,13 @@ class _EventLeadsScreenState extends State<EventLeadsScreen> {
                       f == 'all'
                           ? 'All'
                           : f == 'favorite'
-                              ? 'Favorite'
-                              : _statusLabel({
-                                  'status': ['hot', 'warm', 'cold'].contains(f)
-                                      ? 'new'
-                                      : f,
-                                  'temperature': f
-                                }),
+                          ? 'Favorite'
+                          : _statusLabel({
+                        'status': ['hot', 'warm', 'cold'].contains(f)
+                            ? 'new'
+                            : f,
+                        'temperature': f
+                      }),
                       style: TextStyle(
                         color: active
                             ? Colors.white
@@ -351,7 +351,8 @@ class _EventLeadsScreenState extends State<EventLeadsScreen> {
                       context,
                       MaterialPageRoute(
                           builder: (_) => LeadDetailScreen(
-                              leadId: lead['id'].toString())),
+                              leadId: lead['id'].toString(),
+                              eventId: widget.eventId)),
                     ).then((_) => _loadData()),
                     onMoreTap: () => _showEventsDialog(name),
                   );

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -46,10 +47,60 @@ class ApiClient {
 
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
+        // ── 1. Attach JWT token ───────────────────────────────────────
         final token = await _storage.read(key: 'jwt_token');
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
+
+        // ── 2. Auto-attach event_id to all stall_owner API calls ──────
+        // Debug: always print the path so we can confirm interceptor runs
+        if (kDebugMode) {
+          print('[INTERCEPTOR] path=${options.path} | existing_qp=${options.queryParameters}');
+        }
+
+        final path = options.path;
+        final isStallOwnerCall = path.contains('stall_owner');
+
+        if (isStallOwnerCall) {
+          final alreadyHasEventId = options.queryParameters.containsKey('event_id');
+          if (!alreadyHasEventId) {
+            final eventJson = await _storage.read(key: 'event_json');
+
+            if (kDebugMode) {
+              print('[INTERCEPTOR] event_json from storage: $eventJson');
+            }
+
+            if (eventJson != null && eventJson.isNotEmpty) {
+              try {
+                final event = jsonDecode(eventJson) as Map<String, dynamic>;
+                final eventId = event['id']?.toString();
+                if (kDebugMode) {
+                  print('[INTERCEPTOR] parsed event_id: $eventId');
+                }
+                if (eventId != null && eventId.isNotEmpty) {
+                  options.queryParameters['event_id'] = eventId;
+                  if (kDebugMode) {
+                    print('[INTERCEPTOR] ✅ Attached event_id=$eventId to ${options.path}');
+                  }
+                }
+              } catch (e) {
+                if (kDebugMode) {
+                  print('[INTERCEPTOR] ❌ Failed to parse event_json: $e');
+                }
+              }
+            } else {
+              if (kDebugMode) {
+                print('[INTERCEPTOR] ⚠️ event_json is null or empty — event_id NOT attached');
+              }
+            }
+          } else {
+            if (kDebugMode) {
+              print('[INTERCEPTOR] event_id already present, skipping auto-attach');
+            }
+          }
+        }
+
         handler.next(options);
       },
     ));
@@ -64,7 +115,7 @@ class ApiClient {
   static Future<ApiResult> call(Future<Response> Function() request) async {
     try {
       final response = await request();
-      
+
       if (kDebugMode) {
         final options = response.requestOptions;
         final auth = options.headers['Authorization']?.toString() ?? 'NONE';
@@ -84,7 +135,7 @@ class ApiClient {
         await deleteToken();
         navigatorKey.currentState?.pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (route) => false,
+              (route) => false,
         );
         return ApiResult(
             success: false, error: 'Your session has expired. Please log in again.');
@@ -124,7 +175,7 @@ class ApiClient {
         await deleteToken();
         navigatorKey.currentState?.pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (route) => false,
+              (route) => false,
         );
         return ApiResult(
             success: false, error: 'Your session has expired. Please log in again.');

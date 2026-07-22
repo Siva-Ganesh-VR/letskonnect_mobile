@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:io' show Platform;
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../core/app_colors.dart';
@@ -31,18 +30,15 @@ class _ScannerScreenState extends State<ScannerScreen> {
   Future<void> _requestCameraPermission() async {
     try {
       var status = await Permission.camera.status;
-
-      if (status.isDenied) {
-        status = await Permission.camera.request();
-      }
-
+      if (status.isDenied) status = await Permission.camera.request();
       if (!mounted) return;
 
       if (status.isPermanentlyDenied) {
         setState(() {
           _permissionGranted = false;
           _permissionChecked = true;
-          _cameraError = 'Camera permission permanently denied. Open app settings to enable it.';
+          _cameraError =
+          'Camera permission permanently denied. Open app settings to enable it.';
         });
         return;
       }
@@ -54,9 +50,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         _cameraError = null;
       });
 
-      if (granted) {
-        await _initController();
-      }
+      if (granted) await _initController();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -74,7 +68,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
         facing: CameraFacing.back,
         torchEnabled: false,
       );
-      // attempt to start the controller to surface any errors early
       await _controller?.start();
       setState(() {});
     } catch (e) {
@@ -101,16 +94,24 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
     try {
       final result = await ApiClient.call(() => ApiClient.dio.post(
-            '/api/v1/stall_owner/scan',
-            data: {'qr_token': qrToken},
-          ));
+        '/api/v1/stall_owner/scan',
+        data: {'qr_token': qrToken},
+      ));
 
       if (!mounted) return;
 
       if (result.success) {
         final data = result.data as Map<String, dynamic>;
-        final leadId = data['lead']?['id']?.toString() ?? '';
+        final lead = data['lead'] as Map<String, dynamic>?;
+        final leadId = lead?['id']?.toString() ?? '';
         final message = data['message']?.toString() ?? '';
+
+        // ── Extract event_id from scan response ──────────────────────
+        // The scan response returns the lead object which contains event_id.
+        // We pass it to LeadDetailScreen so all subsequent API calls include
+        // ?event_id=xxx — this lets the backend find the correct stall owner
+        // when a stall owner participates in multiple events.
+        final eventId = lead?['event_id']?.toString();
 
         if (message.isNotEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -124,7 +125,11 @@ class _ScannerScreenState extends State<ScannerScreen> {
           await Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (_) => LeadDetailScreen(leadId: leadId)),
+              builder: (_) => LeadDetailScreen(
+                leadId: leadId,
+                eventId: eventId, // ← pass event_id here
+              ),
+            ),
           );
         }
       } else {
@@ -181,20 +186,19 @@ class _ScannerScreenState extends State<ScannerScreen> {
                     const Icon(Icons.camera_alt_outlined,
                         color: Colors.white38, size: 72),
                     const SizedBox(height: 20),
-                    const Text(
-                      'Camera Access Required',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+                    const Text('Camera Access Required',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700),
+                        textAlign: TextAlign.center),
                     const SizedBox(height: 10),
-                    const Text(
-                      'Please allow camera access to scan visitor QR codes.',
-                      style: TextStyle(color: Colors.white54, fontSize: 14),
-                      textAlign: TextAlign.center,git pu
+                    Text(
+                      _cameraError ??
+                          'Please allow camera access to scan visitor QR codes.',
+                      style: const TextStyle(
+                          color: Colors.white54, fontSize: 14),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 28),
                     ElevatedButton(
@@ -208,18 +212,15 @@ class _ScannerScreenState extends State<ScannerScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 32, vertical: 14),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       child: const Text('Open Settings'),
                     ),
                     const SizedBox(height: 12),
                     TextButton(
                       onPressed: _requestCameraPermission,
-                      child: const Text(
-                        'Try Again',
-                        style: TextStyle(color: Colors.white54),
-                      ),
+                      child: const Text('Try Again',
+                          style: TextStyle(color: Colors.white54)),
                     ),
                   ],
                 ),
@@ -230,7 +231,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
           SafeArea(
             child: Column(
               children: [
-                // Header
                 Padding(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 12),
@@ -250,14 +250,11 @@ class _ScannerScreenState extends State<ScannerScreen> {
                               color: Colors.white, size: 18),
                         ),
                       ),
-                      const Text(
-                        'Scan Visitor QR',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                      const Text('Scan Visitor QR',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700)),
                       GestureDetector(
                         onTap: _permissionGranted
                             ? () => _controller?.toggleTorch()
@@ -269,43 +266,32 @@ class _ScannerScreenState extends State<ScannerScreen> {
                             color: Colors.black.withOpacity(0.4),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(
-                            Icons.flash_on_rounded,
-                            color: _permissionGranted
-                                ? Colors.white
-                                : Colors.white24,
-                            size: 20,
-                          ),
+                          child: Icon(Icons.flash_on_rounded,
+                              color: _permissionGranted
+                                  ? Colors.white
+                                  : Colors.white24,
+                              size: 20),
                         ),
                       ),
                     ],
                   ),
                 ),
-
                 const Spacer(),
-
-                // Scan box
                 if (_permissionGranted) ...[
                   Container(
                     width: 240,
                     height: 240,
                     decoration: BoxDecoration(
-                      border:
-                          Border.all(color: AppColors.primary, width: 3),
+                      border: Border.all(color: AppColors.primary, width: 3),
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
-                    'Point camera at visitor badge',
-                    style:
-                        TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
+                  const Text('Point camera at visitor badge',
+                      style:
+                      TextStyle(color: Colors.white70, fontSize: 14)),
                 ],
-
                 const Spacer(),
-
-                // Processing indicator
                 if (_isProcessing)
                   Container(
                     margin: const EdgeInsets.only(bottom: 40),
