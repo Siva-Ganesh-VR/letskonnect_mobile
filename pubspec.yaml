@@ -11,7 +11,8 @@ dependencies:
     sdk: flutter
   dio: ^5.4.0
   flutter_secure_storage: ^9.0.0
-  mobile_scanner: ^5.0.0
+  mobile_scanner: ^4.0.1
+  permission_handler: ^11.3.1
   url_launcher: ^6.3.0
 
 dev_dependencies:
@@ -31,3 +32,4 @@ flutter:
   assets:
     - assets/icon/app_icon.png
     - assets/images/branding.png
+ 
