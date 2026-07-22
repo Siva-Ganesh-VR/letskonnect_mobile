@@ -194,7 +194,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                     const Text(
                       'Please allow camera access to scan visitor QR codes.',
                       style: TextStyle(color: Colors.white54, fontSize: 14),
-                      textAlign: TextAlign.center,git pu
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 28),
                     ElevatedButton(
