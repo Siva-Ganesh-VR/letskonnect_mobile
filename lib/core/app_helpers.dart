@@ -107,4 +107,83 @@ class AppHelpers {
     }
     return res;
   }
+
+  /// Sorts a list of event maps by priority: Ongoing > Upcoming > Completed.
+  /// Within each category, sorts by start_date descending.
+  static void sortEvents(List<dynamic> events) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    int getPriority(dynamic e) {
+      final status = (e['status'] ?? '').toString().toLowerCase();
+      // Support both explicit friendly status and backend raw status
+      if (status == 'ongoing' || status == 'active') return 0;
+      if (status == 'upcoming' || status == 'draft') return 1;
+      if (status == 'completed' || status == 'archived') return 2;
+
+      // Fallback to date-based logic if status is unknown or missing
+      final start = DateTime.tryParse(e['start_date'] ?? '');
+      final end = DateTime.tryParse(e['end_date'] ?? '');
+
+      if (start == null) return 3;
+
+      final startDay = DateTime(start.year, start.month, start.day);
+      final endDay = end != null ? DateTime(end.year, end.month, end.day) : startDay;
+
+      if (today.isAfter(endDay)) return 2; // Past/Completed
+      if (today.isBefore(startDay)) return 1; // Upcoming
+      return 0; // Ongoing
+    }
+
+    events.sort((a, b) {
+      final pA = getPriority(a);
+      final pB = getPriority(b);
+      if (pA != pB) return pA.compareTo(pB);
+
+      final aDate = DateTime.tryParse(a['start_date'] ?? '') ?? DateTime(0);
+      final bDate = DateTime.tryParse(b['start_date'] ?? '') ?? DateTime(0);
+      return bDate.compareTo(aDate);
+    });
+  }
+
+  /// Returns the most 'relevant' event (ongoing or latest upcoming)
+  static Map<String, dynamic>? findLatestRelevantEvent(List<dynamic> events) {
+    if (events.isEmpty) return null;
+
+    // Create a copy to avoid side-effects if needed, but we usually sort in place
+    final sorted = List.from(events);
+    sortEvents(sorted);
+
+    final now = DateTime.now();
+
+    // 1. Try to find an ongoing event
+    for (var event in sorted) {
+      final start = DateTime.tryParse(event['start_date'] ?? '');
+      final end = DateTime.tryParse(event['end_date'] ?? '');
+      if (start != null && end != null) {
+        if (now.isAfter(start) && now.isBefore(end.add(const Duration(days: 1)))) {
+          return event as Map<String, dynamic>;
+        }
+      }
+    }
+
+    // 2. If no ongoing, return the one starting soonest
+    final upcoming = sorted.where((e) {
+      final start = DateTime.tryParse(e['start_date'] ?? '');
+      return start != null && start.isAfter(now);
+    }).toList();
+
+    if (upcoming.isNotEmpty) {
+      // Sort upcoming ascending to get the one starting soonest
+      upcoming.sort((a, b) {
+        final aDate = DateTime.tryParse(a['start_date'] ?? '') ?? DateTime(0);
+        final bDate = DateTime.tryParse(b['start_date'] ?? '') ?? DateTime(0);
+        return aDate.compareTo(bDate);
+      });
+      return upcoming.first as Map<String, dynamic>;
+    }
+
+    // 3. Fallback to the first one in sorted list (latest started)
+    return sorted.first as Map<String, dynamic>;
+  }
 }
