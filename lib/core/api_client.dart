@@ -62,8 +62,15 @@ class ApiClient {
 
         final path = options.path;
         if (path.contains('stall_owner')) {
-          final alreadyHasEventId = options.queryParameters.containsKey('event_id');
-          if (!alreadyHasEventId) {
+          final queryParams = options.queryParameters;
+          final alreadyHasEventIdInQuery = queryParams.containsKey('event_id');
+
+          bool alreadyHasEventIdInBody = false;
+          if (options.data is Map) {
+            alreadyHasEventIdInBody = (options.data as Map).containsKey('event_id');
+          }
+
+          if (!alreadyHasEventIdInQuery && !alreadyHasEventIdInBody) {
             final eventJson = await _storage.read(key: 'event_json');
             if (kDebugMode) {
               print('[INTERCEPTOR] event_json from storage: $eventJson');
@@ -78,7 +85,7 @@ class ApiClient {
                 if (eventId != null && eventId.isNotEmpty) {
                   options.queryParameters['event_id'] = eventId;
                   if (kDebugMode) {
-                    print('[INTERCEPTOR] ✅ Attached event_id=$eventId to ${options.path}');
+                    print('[INTERCEPTOR] ✅ Attached default event_id=$eventId to ${options.path} (from storage)');
                   }
                 }
               } catch (e) {
@@ -93,7 +100,7 @@ class ApiClient {
             }
           } else {
             if (kDebugMode) {
-              print('[INTERCEPTOR] event_id already present, skipping auto-attach');
+              print('[INTERCEPTOR] event_id already present in ${alreadyHasEventIdInQuery ? "query" : "body"}, skipping auto-attach');
             }
           }
         }
