@@ -4,23 +4,19 @@ import 'core/api_client.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   ApiClient.init();
 
-  // Resolve the session before the first frame. The native splash stays up
-  // until Flutter paints, so the first thing drawn is the real screen —
-  // no second in-app splash.
-  final isLoggedIn = await ApiClient.getToken() != null;
-
-  runApp(LetsKonnectApp(isLoggedIn: isLoggedIn));
+  // Paint immediately. The native launch screen is torn down as soon as the
+  // platform view controller loads, not when Flutter first paints, so awaiting
+  // the keychain read here would leave the window empty for the duration of it.
+  runApp(const LetsKonnectApp());
 }
 
 class LetsKonnectApp extends StatelessWidget {
-  final bool isLoggedIn;
-
-  const LetsKonnectApp({super.key, required this.isLoggedIn});
+  const LetsKonnectApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +75,63 @@ class LetsKonnectApp extends StatelessWidget {
           const TextStyle(color: Color(0xFF64748B), fontSize: 14),
         ),
       ),
-      home: isLoggedIn ? const HomeScreen() : const LoginScreen(),
+      home: const _SessionGate(),
+    );
+  }
+}
+
+/// Resolves the stored session, showing a pixel-match of the native launch
+/// screen until it does. Because it is identical to what iOS/Android already
+/// had on screen, the handover reads as one continuous splash rather than a
+/// second one.
+class _SessionGate extends StatefulWidget {
+  const _SessionGate();
+
+  @override
+  State<_SessionGate> createState() => _SessionGateState();
+}
+
+class _SessionGateState extends State<_SessionGate> {
+  bool? _isLoggedIn;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolve();
+  }
+
+  Future<void> _resolve() async {
+    final isLoggedIn = await ApiClient.getToken() != null;
+    if (mounted) setState(() => _isLoggedIn = isLoggedIn);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isLoggedIn = _isLoggedIn;
+    if (isLoggedIn == null) return const _LaunchView();
+    return isLoggedIn ? const HomeScreen() : const LoginScreen();
+  }
+}
+
+/// Mirrors ios/Runner/Base.lproj/LaunchScreen.storyboard and
+/// android/app/src/main/res/drawable/launch_background.xml: the brand teal with
+/// the light logo mark centred at its native 99x120 size. Keep the three in
+/// sync — any difference here shows up as a visible jump on startup.
+class _LaunchView extends StatelessWidget {
+  const _LaunchView();
+
+  @override
+  Widget build(BuildContext context) {
+    return const ColoredBox(
+      color: Color(0xFF14B8A6),
+      child: Center(
+        child: Image(
+          image: AssetImage('assets/images/logo_mark_light.png'),
+          width: 99,
+          height: 120,
+          fit: BoxFit.contain,
+        ),
+      ),
     );
   }
 }
