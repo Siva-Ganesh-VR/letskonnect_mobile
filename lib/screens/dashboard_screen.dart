@@ -77,10 +77,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _recentLeads = data['latest_event_based_leads'] ?? [];
       _totalCount = data['latest_event_based_lead_counts'] ?? 0;
 
-      // Update event info if present in dashboard
-      if (data['event'] != null) {
-        _event = data['event'];
-      } else {
+      // Event name / date / stall number all come from the latest event.
+      _event = data['latest_event'] ??
+          data['event'] ??
+          _latestFromEvents(data['events']);
+
+      if (_event == null) {
         // Fallback to local storage if dashboard doesn't provide it
         final eventJson = await ApiClient.getEventJson();
         if (eventJson != null) {
@@ -117,6 +119,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     if (mounted) setState(() => _loading = false);
+  }
+
+  /// Newest event by start_date, used when the API sends no explicit
+  /// latest_event key.
+  Map<String, dynamic>? _latestFromEvents(dynamic events) {
+    if (events is! List || events.isEmpty) return null;
+    final sorted = List<dynamic>.from(events)
+      ..sort((a, b) {
+        final aDate = DateTime.tryParse(a['start_date'] ?? '') ?? DateTime(0);
+        final bDate = DateTime.tryParse(b['start_date'] ?? '') ?? DateTime(0);
+        return bDate.compareTo(aDate);
+      });
+    final first = sorted.first;
+    return first is Map<String, dynamic> ? first : null;
   }
 
   String _greetingText() {
@@ -189,7 +205,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final name = _stallOwner?['company_name'] ??
         _stallOwner?['name'] ??
         'Stall Owner';
-    final stallNo = _stallOwner?['stall_number'] ?? '';
+    print("company_name: $name");
+    // stall_number is per-event, so prefer the latest event's value.
+    final stallNo =
+        (_event?['stall_number'] ?? _stallOwner?['stall_number'] ?? '')
+            .toString();
     final eventName = _event?['name'] ?? 'Event';
     print('Name: $name');
     print('Stall No: $stallNo');
