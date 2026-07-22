@@ -47,30 +47,27 @@ class ApiClient {
 
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        // ── 1. Attach JWT token ───────────────────────────────────────
+        // 1. Attach JWT token
         final token = await _storage.read(key: 'jwt_token');
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
 
-        // ── 2. Auto-attach event_id to all stall_owner API calls ──────
-        // Debug: always print the path so we can confirm interceptor runs
+        // 2. Auto-attach event_id to all stall_owner API calls
+        //    The backend uses event_id to resolve the correct stall owner
+        //    when a stall owner participates in multiple events.
         if (kDebugMode) {
           print('[INTERCEPTOR] path=${options.path} | existing_qp=${options.queryParameters}');
         }
 
         final path = options.path;
-        final isStallOwnerCall = path.contains('stall_owner');
-
-        if (isStallOwnerCall) {
+        if (path.contains('stall_owner')) {
           final alreadyHasEventId = options.queryParameters.containsKey('event_id');
           if (!alreadyHasEventId) {
             final eventJson = await _storage.read(key: 'event_json');
-
             if (kDebugMode) {
               print('[INTERCEPTOR] event_json from storage: $eventJson');
             }
-
             if (eventJson != null && eventJson.isNotEmpty) {
               try {
                 final event = jsonDecode(eventJson) as Map<String, dynamic>;
