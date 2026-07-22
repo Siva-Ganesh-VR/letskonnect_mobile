@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -46,10 +47,35 @@ class ApiClient {
 
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
+        // 1. Attach JWT token
         final token = await _storage.read(key: 'jwt_token');
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
+
+        // 2. Auto-attach event_id to all stall_owner API calls
+        //    The backend uses event_id to resolve the correct stall owner
+        //    when a stall owner participates in multiple events.
+        final path = options.path;
+        if (path.contains('/stall_owner/') || path.contains('/stall_owner')) {
+          final alreadyHasEventId = options.queryParameters.containsKey('event_id');
+          if (!alreadyHasEventId) {
+            final eventJson = await _storage.read(key: 'event_json');
+            if (eventJson != null) {
+              try {
+                final event = jsonDecode(eventJson) as Map<String, dynamic>;
+                final eventId = event['id']?.toString();
+                if (eventId != null) {
+                  options.queryParameters['event_id'] = eventId;
+                  if (kDebugMode) {
+                    print('[ApiClient] Auto-attached event_id=$eventId to ${options.path}');
+                  }
+                }
+              } catch (_) {}
+            }
+          }
+        }
+
         handler.next(options);
       },
     ));

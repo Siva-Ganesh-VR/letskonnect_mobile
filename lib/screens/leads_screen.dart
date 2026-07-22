@@ -366,7 +366,8 @@ class _LeadsScreenState extends State<LeadsScreen> {
                       context,
                       MaterialPageRoute(
                           builder: (_) => LeadDetailScreen(
-                              leadId: lead['id'].toString())),
+                              leadId: lead['id'].toString(),
+                              eventId: lead['event_id']?.toString())),
                     ).then((_) => _loadLeads()),
                     onMoreTap: () => _showEventsDialog(name, lead),
                   );
