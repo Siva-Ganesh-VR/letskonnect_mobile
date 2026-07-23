@@ -178,6 +178,20 @@ class _EventsScreenState extends State<EventsScreen> {
 
   Color _avatarColor(String name) => AppHelpers.avatarColor(name);
 
+  bool _hasFoodCoupon(dynamic event) {
+    if (event == null || event is! Map) return false;
+    final foodCoupon = event['food_coupon'];
+    // Handle true, "true", 1
+    final isEnabled = foodCoupon == true ||
+                     foodCoupon.toString().toLowerCase() == 'true' || 
+                     foodCoupon.toString() == '1';
+    
+    if (!isEnabled) return false;
+
+    final count = event['food_coupon_count'];
+    return count != null && count.toString().trim().isNotEmpty;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -334,7 +348,7 @@ class _EventsScreenState extends State<EventsScreen> {
                                     );
                                   },
                                   child: Container(
-                                    height: 140,
+                                    constraints: const BoxConstraints(minHeight: 140),
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
@@ -363,66 +377,82 @@ class _EventsScreenState extends State<EventsScreen> {
                                           ),
                                         ),
                                         const SizedBox(width: 16),
-                                        // Right: Info
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              _buildStatusBadge(status),
-                                              const SizedBox(height: 6),
-                                              Text(
-                                                name,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w800,
-                                                  color: Color(0xFF0F172A),
+                                          // Right: Info
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                _buildStatusBadge(status),
+                                                const SizedBox(height: 6),
+                                                Text(
+                                                  name,
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: Color(0xFF0F172A),
+                                                  ),
                                                 ),
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Row(
-                                                children: [
-                                                  const Icon(Icons.calendar_today_rounded, size: 13, color: Color(0xFF94A3B8)),
-                                                  const SizedBox(width: 8),
-                                                  Expanded(
-                                                    child: Text(
-                                                      _formatDateRange(event['start_date'], event['end_date']),
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow.ellipsis,
-                                                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              const Spacer(),
-                                              Row(
-                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                children: [
-                                                  Text(
-                                                    'Booth: ${stallNo ?? "-"}',
-                                                    style: const TextStyle(
-                                                      color: Color(0xFF10B981),
-                                                      fontSize: 12,
-                                                      fontWeight: FontWeight.w800,
-                                                    ),
-                                                  ),
-                                                  Padding(
-                                                    padding: const EdgeInsets.only(right: 8),
-                                                    child: Text(
-                                                      'Total Leads: $totalLeads',
-                                                      style: const TextStyle(
-                                                        color: Color(0xFF64748B),
-                                                        fontSize: 12,
-                                                        fontWeight: FontWeight.w700,
+                                                const SizedBox(height: 4),
+                                                Row(
+                                                  children: [
+                                                    const Icon(Icons.calendar_today_rounded, size: 13, color: Color(0xFF94A3B8)),
+                                                    const SizedBox(width: 8),
+                                                    Expanded(
+                                                      child: Text(
+                                                        _formatDateRange(event['start_date'], event['end_date']),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
+                                                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                                                       ),
                                                     ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 12),
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      flex: 3,
+                                                      child: Text(
+                                                        'Booth: ${stallNo ?? "-"}',
+                                                        style: const TextStyle(
+                                                          color: Color(0xFF10B981),
+                                                          fontSize: 11,
+                                                          fontWeight: FontWeight.w800,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 4,
+                                                      child: Text(
+                                                        'Food Coupon: ${_hasFoodCoupon(event) ? (event['food_coupon_count'] ?? "0") : "0"}',
+                                                        textAlign: TextAlign.center,
+                                                        style: const TextStyle(
+                                                          color: Color(0xFFF59E0B),
+                                                          fontSize: 11,
+                                                          fontWeight: FontWeight.w800,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 3,
+                                                      child: Text(
+                                                        'Leads: $totalLeads',
+                                                        textAlign: TextAlign.right,
+                                                        style: const TextStyle(
+                                                          color: Color(0xFF64748B),
+                                                          fontSize: 11,
+                                                          fontWeight: FontWeight.w700,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
                                         // Arrow
                                         const SizedBox(width: 8),
                                         Container(

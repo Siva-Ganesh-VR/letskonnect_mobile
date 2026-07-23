@@ -30,6 +30,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!mounted) return;
     setState(() => _loading = true);
     
+    // Attempt to load cached data first for immediate display
     final stallJson = await ApiClient.getStallOwnerJson();
     if (stallJson != null) {
       try {
@@ -37,18 +38,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
       } catch (_) {}
     }
 
+    // Fetch fresh data from the Dashboard API
     final result = await ApiClient.call(
       () => ApiClient.dio.get('/api/v1/stall_owner/dashboard'),
     );
 
     if (result.success && result.data is Map) {
       final data = result.data as Map<String, dynamic>;
-      if (data['events'] is List) {
-        _totalEvents = (data['events'] as List).length;
+      final stallOwnerData = data['stall_owner'];
+      final eventsData = data['events'];
+
+      if (stallOwnerData != null && stallOwnerData is Map<String, dynamic>) {
+        _stallOwner = stallOwnerData;
       }
-      if (data['summary'] != null && data['summary']['total'] != null) {
-        _totalLeadsCount = data['summary']['total'];
+
+      // Calculate global Total Leads by summing total_leads across all events returned in the dashboard.
+      // This is necessary because top-level summary fields are scoped to a single event due to the API interceptor.
+      int total = 0;
+      if (eventsData is List) {
+        _totalEvents = eventsData.length;
+        for (var e in eventsData) {
+          if (e is Map) {
+            final count = e['total_leads'];
+            total += int.tryParse(count?.toString() ?? '0') ?? 0;
+          }
+        }
+      } else {
+        _totalEvents = 0;
       }
+      _totalLeadsCount = total;
     }
 
     if (mounted) setState(() => _loading = false);
@@ -97,7 +115,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final name     = _stallOwner?['name'] ?? _stallOwner?['company_name'] ?? 'Stall Owner';
     final company  = _stallOwner?['company_name'] ?? _stallOwner?['business_name'] ?? '';
     final mobile   = _stallOwner?['mobile_number'] ?? '';
-    final category = _stallOwner?['category'] ?? 'General';
+    final category = _stallOwner?['stall_category'] ?? _stallOwner?['category'] ?? 'General';
+    final stallNo  = _stallOwner?['stall_number']?.toString() ?? '';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F4F8),
@@ -140,7 +159,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                     decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                    child: Text('Total Events : $_totalEvents', style: const TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w600)),
+                    child: Text('Events Joined : $_totalEvents', style: const TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w600)),
                   ),
                 ],
               ),
@@ -158,6 +177,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   _InfoRow(icon: Icons.phone_rounded, label: 'Mobile', value: mobile, isFirst: true),
                   const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
+                  if (stallNo.isNotEmpty) ...[
+                    _InfoRow(icon: Icons.confirmation_number_rounded, label: 'Stall Number', value: stallNo),
+                    const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
+                  ],
                   _InfoRow(icon: Icons.category_rounded, label: 'Category', value: category),
                   const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
                   _InfoRow(icon: Icons.people_alt_rounded, label: 'Total Leads', value: '$_totalLeadsCount', isLast: true),

@@ -23,7 +23,6 @@ class _ManualAddVisitorScreenState extends State<ManualAddVisitorScreen> {
   final _mobileCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
-  final _foodCouponCtrl = TextEditingController();
 
   String? _selectedEventId;
   String? _selectedCategory;
@@ -64,7 +63,6 @@ class _ManualAddVisitorScreenState extends State<ManualAddVisitorScreen> {
     _mobileCtrl.dispose();
     _locationCtrl.dispose();
     _notesCtrl.dispose();
-    _foodCouponCtrl.dispose();
     super.dispose();
   }
 
@@ -73,14 +71,19 @@ class _ManualAddVisitorScreenState extends State<ManualAddVisitorScreen> {
     final result = await ApiClient.call(
       () => ApiClient.dio.get('/api/v1/stall_owner/dashboard'),
     );
-    if (result.success && result.data is Map && result.data['events'] is List) {
-      _events = result.data['events'] as List<dynamic>;
-      AppHelpers.sortEvents(_events);
+    if (result.success && result.data is Map) {
+      if (result.data['events'] is List) {
+        _events = result.data['events'] as List<dynamic>;
+      }
 
-      if (_selectedEventId == null && _events.isNotEmpty) {
-        final best = AppHelpers.findLatestRelevantEvent(_events);
-        if (best != null) {
-          _selectedEventId = best['id']?.toString();
+      if (_selectedEventId == null) {
+        // Requirement 2 & 3: Use latest_event from dashboard as the source of truth
+        final latestEvent = result.data['latest_event'];
+        if (latestEvent != null && latestEvent is Map) {
+          _selectedEventId = latestEvent['id']?.toString();
+        } else if (_events.isNotEmpty) {
+          // Fallback only if latest_event is missing
+          _selectedEventId = _events.first['id']?.toString();
         }
       }
     }
@@ -243,16 +246,6 @@ class _ManualAddVisitorScreenState extends State<ManualAddVisitorScreen> {
                         child: Text(m),
                       )).toList(),
                       onChanged: (v) => setState(() => _decisionMaker = v),
-                    ),
-
-                    _buildTextField(
-                      controller: _foodCouponCtrl,
-                      label: 'Food Coupon Count',
-                      hint: 'Enter number of coupons',
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      // NOTE: food_coupon_count is currently UI-only. 
-                      // Backend persistence is pending backend support.
                     ),
 
                     _buildTextField(
