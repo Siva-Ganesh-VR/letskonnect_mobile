@@ -93,9 +93,45 @@ class _ScannerScreenState extends State<ScannerScreen> {
     }
 
     try {
+      // 1. Fetch latest dashboard data to get the true latest event ID
+      final dashResult = await ApiClient.call(
+        () => ApiClient.dio.get('/api/v1/stall_owner/dashboard'),
+      );
+
+      if (!mounted) return;
+
+      if (!dashResult.success || dashResult.data == null || dashResult.data['latest_event'] == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unable to determine the latest event. Please refresh and try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() => _isProcessing = false);
+        _controller?.start();
+        return;
+      }
+
+      final latestEventId = dashResult.data['latest_event']['id']?.toString();
+      if (latestEventId == null || latestEventId.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unable to determine the latest event. Please refresh and try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() => _isProcessing = false);
+        _controller?.start();
+        return;
+      }
+
+      // 2. Create the lead using the latest event ID
       final result = await ApiClient.call(() => ApiClient.dio.post(
         '/api/v1/stall_owner/scan',
-        data: {'qr_token': qrToken},
+        data: {
+          'qr_token': qrToken,
+          'event_id': latestEventId, // Explicitly pass the latest event ID
+        },
       ));
 
       if (!mounted) return;
